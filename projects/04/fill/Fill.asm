@@ -12,3 +12,46 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+    @24575
+    D=A
+    @end_of_screen
+    M=D
+(KEYBOARD_LISTENING)
+    @KBD
+    D=M
+    @FILL_BLACK
+    D;JGT
+    @FILL_WHITE
+    D;JEQ
+    @KEYBOARD_LISTENING
+    0;JMP
+(FILL_WHITE)
+    @current_color
+    M=0
+    @FILL_LOOP
+    0;JMP
+(FILL_BLACK)
+    @current_color
+    M=-1
+    @FILL_LOOP
+    0;JMP
+(FILL_LOOP)
+    @SCREEN
+    D=A
+    @pos
+    M=D
+    (FILLING)
+    @current_color
+    D=M
+    @pos
+    A=M
+    M=D
+    D=A
+    @end_of_screen
+    D=M-D
+    @KEYBOARD_LISTENING
+    D;JEQ
+    @pos
+    M=M+1
+    @FILLING
+    0;JMP
