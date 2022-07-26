@@ -40,4 +40,64 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    //                  [15]   [12]            [0]
+    // Instruction format: i xx a cccccc ddd jjj
+
+    Mux16(a=outrega, b=inM, sel=instruction[12], out=iny); // 0=usual comp, 1=mem comp
+
+    ALU(x=outregd, y=iny, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=res, out=outM, zr=zr, ng=ng); //zr and ng are for jump part of instr
+
+    // Selecting dest
+    DMux8Way(in=true, sel=instruction[3..5], a=destNULL, b=destM, c=destD, d=destMD, e=destA, f=destAM, g=destAD, h=destAMD);
+
+    // Checking to see if we need to write to the register A
+    Or8Way(in[0]=destA, in[1]=destAM, in[2]=destAD, in[3]=destAMD, in[4..7]=false, out=tempWriteA);
+    Not(in=instruction[15], out=nottype);
+    Or(a=tempWriteA, b=nottype, out=loadrega);  // Always write to A if it is an A-instruction
+
+    // Load whole 15-bit address if A-instruction, else load out of the ALU
+    Mux16(a=instruction, b=res, sel=instruction[15], out=inrega);
+
+    ARegister(in=inrega, load=loadrega, out=outrega, out[0..14]=addressM);
+
+    // Checking to see if we need to write to the register D
+    Or8Way(in[0]=destD, in[1]=destMD, in[2]=destAD, in[3]=destAMD, in[4..7]=false, out=tempWriteD);
+    And(a=tempWriteD, b=instruction[15], out=loadregd); // Only write to D if it is a C-instruction
+
+    DRegister(in=res, load=loadregd, out=outregd);
+    
+    // Checking to see if we need to write to the register M
+    Or8Way(in[0]=destM, in[1]=destMD, in[2]=destAM, in[3]=destAMD, in[4..7]=false, out=tempWriteM);
+    And(a=tempWriteM, b=instruction[15], out=writeM); // Only write to M if it is a C-instruction
+
+    // Jump execution
+    DMux8Way(in=true, sel=instruction[0..2], a=noJMP, b=JGT, c=JEQ, d=JGE, e=JLT, f=JNE, g=JLE, h=JMP);
+
+    Not(in=zr, out=notzr);
+    Not(in=ng, out=notng);
+
+    // if out > 0
+    And(a=notzr, b=notng, out=tempt0);
+    And(a=tempt0, b=JGT, out=t0);
+
+    // if out = 0
+    And(a=JEQ, b=zr, out=t1);
+
+    // if out >= 0
+    And(a=notng, b=JGE, out=t2);
+
+    // if out < 0
+    And(a=JLT, b=ng, out=t3);
+
+    // if out != 0
+    And(a=JNE, b=notzr, out=t4);
+
+    // if out <= 0
+    Or(a=ng, b=zr, out=tempt5);
+    And(a=tempt5, b=JLE, out=t5);
+
+    Or8Way(in[0]=t0, in[1]=t1, in[2]=t2, in[3]=t3, in[4]=t4, in[5]=t5, in[6]=JMP, in[7]=false, out=tPC);
+    And(a=tPC, b=instruction[15], out=loadPC); // Jump only if it was a C-instruction
+
+    PC(in=outrega, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
 }
