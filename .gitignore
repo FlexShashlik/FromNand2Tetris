@@ -1,2 +1,6 @@
 *.dat
 *.out
+.vscode
+projects/06/obj
+projects/06/bin
+*.csproj
