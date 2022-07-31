@@ -12,15 +12,12 @@ namespace Assembler
     {
         StreamReader file;
         string currentCommand;
-        /// <summary>
-        /// Starting index of the actual command (without white spaces)
-        /// </summary>
         CommandType currentCommandType;
 
         public Parser(string fileName) 
         {
             file = new StreamReader(fileName);
-            currentCommand = String.Empty;
+            currentCommand = string.Empty;
             currentCommandType = CommandType.NULL;
         }
 

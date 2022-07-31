@@ -52,7 +52,7 @@
                         }
 
                         string bin = Convert.ToString(num, 2);
-                        writer.WriteLine(new String('0', 16 - bin.Length) + bin);
+                        writer.WriteLine(new string('0', 16 - bin.Length) + bin);
                         
                         break;
                     case CommandType.C_COMMAND:
