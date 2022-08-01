@@ -16,15 +16,15 @@ namespace VMTranslator
 
     class Parser
     {
+        public CommandType CurrentCommandType { get; private set; }
         StreamReader file;
         string currentCommand;
-        CommandType currentCommandType;
 
         public Parser(string inputFile) 
         {
             file = new StreamReader(inputFile);
             currentCommand = string.Empty;
-            currentCommandType = CommandType.NULL;
+            CurrentCommandType = CommandType.NULL;
         }
 
         public bool HasMoreCommands()
@@ -38,7 +38,7 @@ namespace VMTranslator
             return hasMoreCommands;
         }
 
-        public void Advance()
+        public string Advance()
         {
             string? str;
 
@@ -51,17 +51,15 @@ namespace VMTranslator
 
             currentCommand = str;
 
-            currentCommandType = (currentCommand.Split()[0]) switch 
+            CurrentCommandType = (currentCommand.Split()[0]) switch 
             {
                 "add" or "sub" or "neg" or "eq" or "gt" or "lt" or "and" or "or" or "not" => CommandType.C_ARITHMETIC,
                 "push" => CommandType.C_PUSH,
+                "pop" => CommandType.C_POP,
                 _ => CommandType.NULL
             };
-        }
 
-        public CommandType CurrentCommandType()
-        {
-            return currentCommandType;
+            return currentCommand;
         }
 
         /// <summary>
@@ -71,11 +69,11 @@ namespace VMTranslator
         /// </summary>
         public string Arg1()
         {
-            if(currentCommandType == CommandType.C_ARITHMETIC)
+            if(CurrentCommandType == CommandType.C_ARITHMETIC)
             {
                 return currentCommand.Split()[0];
             }
-            else if(currentCommandType == CommandType.C_PUSH)
+            else if(CurrentCommandType == CommandType.C_PUSH || CurrentCommandType == CommandType.C_POP)
             {
                 return currentCommand.Split()[1];
             }
@@ -91,7 +89,7 @@ namespace VMTranslator
         /// </summary>
         public int Arg2()
         {
-            if(currentCommandType == CommandType.C_PUSH)
+            if(CurrentCommandType == CommandType.C_PUSH || CurrentCommandType == CommandType.C_POP)
             {
                 if(!(int.TryParse(currentCommand.Split()[2], out int arg)))
                     throw new FormatException("Parsing error");

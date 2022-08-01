@@ -5,29 +5,28 @@
         static void Main(string[] args)
         {
             CodeWriter writer = new CodeWriter(Path.GetDirectoryName(args[0]) + "/" + Path.GetDirectoryName(args[0])?.Split(Path.DirectorySeparatorChar).Last() + ".asm");
+            string[] files = Directory.GetFiles(Path.GetDirectoryName(args[0]), "*.vm");
 
-            if(args[0].Contains('.')) // If it is a single .vm file 
+            foreach (string file in files)
             {
-                Parser parser = new Parser(args[0]);
+                Parser parser = new Parser(file);
+                writer.InputFileName = Path.GetFileNameWithoutExtension(file);
 
                 while(parser.HasMoreCommands())
                 {
-                    parser.Advance();
-                    
-                    switch(parser.CurrentCommandType())
+                    writer.WriteCurrentCommandInComment(parser.Advance());
+
+                    switch(parser.CurrentCommandType)
                     {
                         case CommandType.C_ARITHMETIC:
                             writer.WriteArithmetic(parser.Arg1());
                             break;
+                        case CommandType.C_POP:
                         case CommandType.C_PUSH:
-                            writer.WritePushPop(CommandType.C_PUSH, parser.Arg1(), parser.Arg2());
+                            writer.WritePushPop(parser.CurrentCommandType, parser.Arg1(), parser.Arg2());
                             break;
                     }
-                }          
-            }
-            else // If it is a directory
-            {
-
+                }   
             }
             
             writer.Close();
