@@ -16,6 +16,52 @@ namespace VMTranslator
             InputFileName = string.Empty;
         }
 
+        public void WriteInit()
+        {
+            file.WriteLine("@256");
+            file.WriteLine("D=A");
+            file.WriteLine("@SP");
+            file.WriteLine("M=D");
+            file.WriteLine("@SP");
+            //TODO call sys init
+        }
+
+        public void WriteLabel(string label)
+        {
+            file.WriteLine($"({label})");
+        }
+
+        public void WriteGoto(string label)
+        {
+            file.WriteLine($"@{label}");
+            file.WriteLine("0;JMP");
+        }
+        
+        public void WriteIf(string label)
+        {
+            file.WriteLine("@SP");
+            file.WriteLine("M=M-1");
+            file.WriteLine("A=M");
+            file.WriteLine("D=M");
+            file.WriteLine($"@{label}");
+            file.WriteLine("D;JNE");
+        }
+
+        public void WriteCall(string functionName, int numArgs)
+        {
+
+        }
+        
+        public void WriteReturn()
+        {
+
+        }
+        
+        public void WriteFunction(string functionName, int numArgs)
+        {
+
+        }
+
         public void WriteCurrentCommandInComment(string cmd)
         {
             file.WriteLine($"//{cmd}");
