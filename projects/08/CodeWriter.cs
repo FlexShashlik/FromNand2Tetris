@@ -16,14 +16,29 @@ namespace VMTranslator
             InputFileName = string.Empty;
         }
 
+        void PushDToStack()
+        {
+            file.WriteLine("@SP");
+            file.WriteLine("A=M");
+            file.WriteLine("M=D");
+            file.WriteLine("@SP");
+            file.WriteLine("M=M+1");
+        }
+
+        void PopFromStackToD()
+        {
+            file.WriteLine("@SP");
+            file.WriteLine("AM=M-1");
+            file.WriteLine("D=M");
+        }
+
         public void WriteInit()
         {
             file.WriteLine("@256");
             file.WriteLine("D=A");
             file.WriteLine("@SP");
             file.WriteLine("M=D");
-            file.WriteLine("@SP");
-            //TODO call sys init
+            WriteCall("Sys.init", 0);
         }
 
         public void WriteLabel(string label)
@@ -49,17 +64,119 @@ namespace VMTranslator
 
         public void WriteCall(string functionName, int numArgs)
         {
+            // push return address
+            file.WriteLine($"@RET{labelIndex}");
+            file.WriteLine("D=A");
+            PushDToStack();
 
+            // push LCL
+            file.WriteLine("@LCL");
+            file.WriteLine("D=M");
+            PushDToStack();
+
+            // push ARG
+            file.WriteLine("@ARG");
+            file.WriteLine("D=M");
+            PushDToStack();
+            
+            // push THIS
+            file.WriteLine("@THIS");
+            file.WriteLine("D=M");
+            PushDToStack();
+
+            // push THAT
+            file.WriteLine("@THAT");
+            file.WriteLine("D=M");
+            PushDToStack();
+            
+            // ARG = SP-numArgs-5
+            file.WriteLine($"@{numArgs}");
+            file.WriteLine("D=A");
+            file.WriteLine("@SP");
+            file.WriteLine("D=M-D");
+            file.WriteLine("@5");
+            file.WriteLine("D=D-A");
+            file.WriteLine("@ARG");
+            file.WriteLine("M=D");
+
+            // LCL = SP
+            file.WriteLine("@SP");
+            file.WriteLine("D=M");
+            file.WriteLine("@LCL");
+            file.WriteLine("M=D");
+
+            WriteGoto(functionName);
+
+            WriteLabel($"RET{labelIndex++}");
         }
         
         public void WriteReturn()
         {
+            file.WriteLine("@LCL");
+            file.WriteLine("D=M");
+            file.WriteLine("@R13"); // R13 = Frame
+            file.WriteLine("M=D");
+            file.WriteLine("@5");
+            file.WriteLine("D=A");
+            file.WriteLine("@R13");
+            file.WriteLine("A=M-D");
+            file.WriteLine("D=M");
+            file.WriteLine("@R14"); // R14 = Ret
+            file.WriteLine("M=D");
 
+            PopFromStackToD();
+            file.WriteLine("@ARG");
+            file.WriteLine("A=M");
+            file.WriteLine("M=D");
+            file.WriteLine("D=A+1");
+            file.WriteLine("@SP");
+            file.WriteLine("M=D");
+
+            file.WriteLine("@R13");
+            file.WriteLine("A=M-1");
+            file.WriteLine("D=M");
+            file.WriteLine("@THAT");
+            file.WriteLine("M=D");
+
+            file.WriteLine("@R13");
+            file.WriteLine("D=M");
+            file.WriteLine("@2");
+            file.WriteLine("D=D-A");
+            file.WriteLine("A=D");
+            file.WriteLine("D=M");
+            file.WriteLine("@THIS");
+            file.WriteLine("M=D");
+
+            file.WriteLine("@R13");
+            file.WriteLine("D=M");
+            file.WriteLine("@3");
+            file.WriteLine("D=D-A");
+            file.WriteLine("A=D");
+            file.WriteLine("D=M");
+            file.WriteLine("@ARG");
+            file.WriteLine("M=D");
+            
+            file.WriteLine("@R13");
+            file.WriteLine("D=M");
+            file.WriteLine("@4");
+            file.WriteLine("D=D-A");
+            file.WriteLine("A=D");
+            file.WriteLine("D=M");
+            file.WriteLine("@LCL");
+            file.WriteLine("M=D");
+
+            file.WriteLine("@R14");
+            file.WriteLine("A=M");
+            file.WriteLine("0;JMP");
         }
         
         public void WriteFunction(string functionName, int numArgs)
         {
-
+            WriteLabel(functionName);
+            for (int i = 0; i < numArgs; i++)
+            {
+                WritePushPop(CommandType.C_PUSH, "constant", 0);
+            }
         }
 
         public void WriteCurrentCommandInComment(string cmd)
@@ -214,11 +331,7 @@ namespace VMTranslator
                         break;
                 }
 
-                file.WriteLine("@SP");
-                file.WriteLine("A=M");
-                file.WriteLine("M=D");
-                file.WriteLine("@SP");
-                file.WriteLine("M=M+1");
+                PushDToStack();
             }
             else if(command == CommandType.C_POP)
             {
@@ -257,10 +370,7 @@ namespace VMTranslator
                 file.WriteLine("@R13");
                 file.WriteLine("M=D"); // R13 = mem. segment base + index
 
-                file.WriteLine("@SP");
-                file.WriteLine("M=M-1");
-                file.WriteLine("A=M");
-                file.WriteLine("D=M");
+                PopFromStackToD();
 
                 file.WriteLine("@R13");
                 file.WriteLine("A=M");

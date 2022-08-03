@@ -5,7 +5,7 @@
         static void Main(string[] args)
         {
             CodeWriter writer = new CodeWriter(Path.GetDirectoryName(args[0]) + "/" + Path.GetDirectoryName(args[0])?.Split(Path.DirectorySeparatorChar).Last() + ".asm");
-            //writer.WriteInit();
+            writer.WriteInit();
             
             string[] files = Directory.GetFiles(Path.GetDirectoryName(args[0]), "*.vm");
 
@@ -35,6 +35,15 @@
                             break;
                         case CommandType.C_GOTO:
                             writer.WriteGoto(parser.Arg1());
+                            break;
+                        case CommandType.C_CALL:
+                            writer.WriteCall(parser.Arg1(), parser.Arg2());
+                            break;
+                        case CommandType.C_FUNCTION:
+                            writer.WriteFunction(parser.Arg1(), parser.Arg2());
+                            break;
+                        case CommandType.C_RETURN:
+                            writer.WriteReturn();
                             break;
                     }
                 }   
