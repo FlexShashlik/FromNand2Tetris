@@ -4,3 +4,9 @@
 projects/*/obj
 projects/*/bin
 *.csproj
+*.suo
+/projects/10/.vs
+/projects/10/JackAnalyzer/.vs/JackAnalyzer
+/projects/10/JackAnalyzer/JackAnalyzer/bin/Debug/net6.0
+/projects/10/JackAnalyzer/JackAnalyzer/obj
+/projects/10/JackAnalyzer/JackAnalyzer/Properties
