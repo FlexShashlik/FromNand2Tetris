@@ -2,14 +2,10 @@
 
 namespace JackAnalyzer
 {
-    enum TokenType
+    class Token
     {
-        NULL,
-        KEYWORD,
-        SYMBOL,
-        IDENTIFIER,
-        INT_CONST,
-        STRING_CONST
+        public string Value = string.Empty;
+        public string Type = string.Empty;
     }
 
     /// <summary>
@@ -19,12 +15,11 @@ namespace JackAnalyzer
     {
         StreamWriter writer;
         StreamReader reader;
-        public string CurrentToken { get; private set; }
-        public TokenType CurrentTokenType { get; private set; }
+        public Token CurrentToken { get; private set; }
         List<Match> matches;
 
-        string keywordPattern = "class|constructor|function|method|field|static|var|int|char|boolean|void|" +
-                                    "true|false|null|this|let|do|if|else|while|return";
+        string keywordPattern = "^class$|^constructor$|^function$|^method$|^field$|^static$|^var$|^int$|^char$|^boolean$|^void$|" +
+                                    "^true$|^false$|^null$|^this$|^let$|^do$|^if$|^else$|^while$|^return$";
 
         string symbolPattern = "{|}|\\(|\\)|\\[|\\]|\\.|,|;|\\+|-|\\*|/|&|\\||<|>|=|~";
 
@@ -38,8 +33,7 @@ namespace JackAnalyzer
         {
             writer = new StreamWriter(inputFile.Replace(".jack", "_outT.xml"));
             reader = new StreamReader(inputFile);
-            CurrentToken = string.Empty;
-            CurrentTokenType = TokenType.NULL;
+            CurrentToken = new Token();
             matches = new List<Match>();
 
             writer.WriteLine("<tokens>");
@@ -50,24 +44,18 @@ namespace JackAnalyzer
             writer.WriteLine($"<{tokenType}> {token} </{tokenType}>");
         }
 
-        public bool HasMoreTokens()
+        public void Close()
         {
-            bool hasMoreCommands = !reader.EndOfStream;
-            if (!hasMoreCommands)
-            {
-                writer.WriteLine("</tokens>");
-                writer.Close();
-                reader.Close();
-            }
-
-            return hasMoreCommands;
+            writer.WriteLine("</tokens>");
+            writer.Close();
+            reader.Close();
         }
 
         List<Match> GetNewMatches()
         {
             string? line = reader.ReadLine()?.Trim();
 
-            while (!reader.EndOfStream && (line == null || string.IsNullOrWhiteSpace(line) || line[0] == '*' || line[0] == '/'))
+            while (line == null || string.IsNullOrWhiteSpace(line) || line[0] == '*' || line[0] == '/')
             {
                 line = reader.ReadLine()?.Trim();
             }
@@ -80,7 +68,7 @@ namespace JackAnalyzer
 
         public void Advance()
         {
-            if(matches.Count == 0)
+            if (matches.Count == 0)
                 matches = GetNewMatches();
 
             if (matches.Count == 0)
@@ -90,18 +78,18 @@ namespace JackAnalyzer
             matches.RemoveAt(0);
         }
 
-        string GetToken(string word)
+        void GetToken(string word)
         {
-            CurrentToken = word;
+            CurrentToken.Value = word;
 
             if (new Regex(keywordPattern).IsMatch(word))
             {
-                CurrentTokenType = TokenType.KEYWORD;
-                WriteToken("keyword", word);
+                CurrentToken.Type = "keyword";
+                WriteToken(CurrentToken.Type, word);
             }
             else if (new Regex(symbolPattern).IsMatch(word))
             {
-                CurrentTokenType = TokenType.SYMBOL;
+                CurrentToken.Type = "symbol";
                 word = (word) switch
                 {
                     "<" => "&lt;",
@@ -110,25 +98,23 @@ namespace JackAnalyzer
                     _ => word
                 };
 
-                WriteToken("symbol", word);
+                WriteToken(CurrentToken.Type, word);
             }
             else if (new Regex(intPattern).IsMatch(word))
             {
-                CurrentTokenType = TokenType.INT_CONST;
-                WriteToken("integerConstant", word);
+                CurrentToken.Type = "integerConstant";
+                WriteToken(CurrentToken.Type, word);
             }
             else if (new Regex(stringPattern).IsMatch(word))
             {
-                CurrentTokenType = TokenType.STRING_CONST;
-                WriteToken("stringConstant", word.Replace("\"", string.Empty));
+                CurrentToken.Type = "stringConstant";
+                WriteToken(CurrentToken.Type, word.Replace("\"", string.Empty));
             }
             else if (new Regex(identifierPattern).IsMatch(word))
             {
-                CurrentTokenType = TokenType.IDENTIFIER;
-                WriteToken("identifier", word);
+                CurrentToken.Type = "identifier";
+                WriteToken(CurrentToken.Type, word);
             }
-
-            return word;
         }
     }
 }
